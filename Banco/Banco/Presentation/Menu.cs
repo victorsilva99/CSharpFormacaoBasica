@@ -105,8 +105,6 @@ namespace Banco.Presentation
         public static void NovoCliente()
         {
             Viewer.Show();
-            Console.SetCursorPosition(3, 2);
-            Console.WriteLine($"Olá! Bem vindo!");
 
             Console.SetCursorPosition(3, 4);
             Console.WriteLine("Iremos realizar seu cadastro! :)");
@@ -119,24 +117,68 @@ namespace Banco.Presentation
             Console.Write("Endereço: ");
             var endereco = Console.ReadLine();
             Console.SetCursorPosition(3, 10);
-            Console.Write("CPF/CNPJ: ");
-            var cpfCnpj = Console.ReadLine();
+            Console.Write("CPF: ");
+            var cpf = Console.ReadLine();
 
-            if (cpfCnpj != null)
+            var cpfOk = ValidarCPF(cpf);
+
+            if (cpfOk)
             {
-                cpfCnpj = cpfCnpj.Replace(".", "");
-                cpfCnpj = cpfCnpj.Replace("/", "");
-
-                if (cpfCnpj.Length == 11)
-                    Cliente.CadastrarPessoaFisica(nome, endereco, cpfCnpj);
-                if (cpfCnpj.Length == 14)
-                    Cliente.CadastrarPessoaFisica(nome, endereco, cpfCnpj);
+                Cliente.CadastrarPessoaFisica(nome, endereco, cpf);
             }
             else
             {
-                Viewer.Mensagem("O campo CPF/CNPJ não pode estar vazio!");
+                Viewer.Mensagem("CPF inválido!");
+                Thread.Sleep(2000);
                 NovoCliente();
             }
+        }
+        public static bool ValidarCPF(string cpf)
+        {
+            int[] multiplicador1 = new int[9] { 10, 9, 8, 7, 6, 5, 4, 3, 2 };
+            int[] multiplicador2 = new int[10] { 11, 10, 9, 8, 7, 6, 5, 4, 3, 2 };
+            string tempCpf;
+            string digito;
+            int soma;
+            int resto;
+
+            cpf = cpf.Trim();
+
+            cpf = cpf.Replace(".", "").Replace("-", "");
+
+            if (cpf.Length != 11)
+                return false;
+
+            tempCpf = cpf.Substring(0, 9);
+            soma = 0;
+
+            for (int i = 0; i < 9; i++)
+                soma += int.Parse(tempCpf[i].ToString()) * multiplicador1[i];
+
+            resto = soma % 11;
+
+            if (resto < 2)
+                resto = 0;
+            else
+                resto = 11 - resto;
+
+            digito = resto.ToString();
+            tempCpf = tempCpf + digito;
+            soma = 0;
+
+            for (int i = 0; i < 10; i++)
+                soma += int.Parse(tempCpf[i].ToString()) * multiplicador2[i];
+
+            resto = soma % 11;
+
+            if (resto < 2)
+                resto = 0;
+            else
+                resto = 11 - resto;
+
+            digito = digito + resto.ToString();
+
+            return cpf.EndsWith(digito);
         }
 
         public static void WriteOptions(Cliente cliente)
@@ -172,6 +214,8 @@ namespace Banco.Presentation
                 case 0:
                     {
                         Console.Clear();
+                        Viewer.Mensagem("Obrigado por utilizar nossos serviços!!");
+                        Thread.Sleep(3000);
                         Environment.Exit(0);
                         break;
                     }
@@ -182,8 +226,6 @@ namespace Banco.Presentation
         public static void ShowDepositar(Cliente cliente)
         {
             Viewer.Show();
-            Console.SetCursorPosition(3, 2);
-            Console.WriteLine($"Olá {cliente.Nome}! Bem vindo!");
 
             Console.SetCursorPosition(3, 4);
             Console.WriteLine("Informe o valor do depósito:");
@@ -213,7 +255,7 @@ namespace Banco.Presentation
             if (entradaValor != null)
                 valor = decimal.Parse(entradaValor);
 
-            cliente.DepositarCPF(cliente, valor);
+            cliente.SacarCPF(cliente, valor);
         }
 
         public static void ShowExtrato(Cliente cliente, string message = "")
@@ -221,17 +263,26 @@ namespace Banco.Presentation
             Viewer.Show();
             Viewer.Mensagem(message);
 
-            Console.SetCursorPosition(3, 4);
-            Console.WriteLine("Saldo Atual:");
+            var extrato = Cliente.ExtratoCPF(cliente.Conta);
+            var saldo = Cliente.ObterSaldo(cliente.Conta);
 
-            var saldo = Cliente.ExtratoCPF(cliente.Conta);
+            Console.SetCursorPosition(3, 2);
+            Console.WriteLine("--------------------- EXTRATO ---------------------");
+            var indice = 3;
+            foreach (var movimentacao in extrato)
+            {
+                Console.SetCursorPosition(3, indice);
+                Console.WriteLine($"{string.Format("{0:g}", movimentacao.DataTransacao)} - {movimentacao.TipoMovimentacao.PadRight(8)} - {string.Format("{0:C}", movimentacao.ValorMovimentado)}");
+                indice++;
+            }
+            Console.SetCursorPosition(3, indice++);
+            Console.WriteLine("---------------------------------------------------");
+            Console.SetCursorPosition(3, indice++);
+            Console.WriteLine($"Saldo Atual: {string.Format("{0:C}", saldo)}");
 
-            Console.SetCursorPosition(3, 6);
-            Console.Write($"{string.Format("{0:C}", saldo)}");
-
-            Console.SetCursorPosition(3, 10);
+            Console.SetCursorPosition(3, indice++);
             Console.WriteLine("Precione ENTER para voltar ao menu");
-            Console.SetCursorPosition(3, 11);
+            Console.SetCursorPosition(3, indice++);
             var key = Console.ReadKey(true);
 
             if (key.Key == ConsoleKey.Enter)

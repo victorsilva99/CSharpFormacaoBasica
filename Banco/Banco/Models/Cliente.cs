@@ -4,9 +4,10 @@ namespace Banco.Models
 {
     public class Cliente
     {
-        static List<PessoaFisica>? ClientesPessoaFisica = new List<PessoaFisica>();
-        static List<PessoaJuridica> ClientesPessoaJuridica = new List<PessoaJuridica>();
+        static List<PessoaFisica> ClientesPessoaFisica = new();
+        static List<PessoaJuridica> ClientesPessoaJuridica = new();
 
+        public List<Movimentacoes> Movimentacoes { get; set; }
         public int Conta { get; private set; }
         public int Agencia { get; private set; }
         public string? Nome { get; set; }
@@ -16,8 +17,9 @@ namespace Banco.Models
 
         public Cliente() { }
 
-        public Cliente(int conta, int agencia, string nome, string endereco, decimal saldo, int senha = 0)
+        public Cliente(List<Movimentacoes> movimentacoes, int conta, int agencia, string nome, string endereco, decimal saldo, int senha = 0)
         {
+            Movimentacoes = movimentacoes;
             Conta = conta;
             Agencia = agencia;
             Senha = senha;
@@ -26,8 +28,9 @@ namespace Banco.Models
             Saldo = saldo;
         }
 
-        public Cliente(List<PessoaFisica> listaPessoaFisica, List<PessoaJuridica> listaPessoaJuridica)
+        public Cliente(List<Movimentacoes> movimentacoes, List<PessoaFisica> listaPessoaFisica, List<PessoaJuridica> listaPessoaJuridica)
         {
+            Movimentacoes = movimentacoes;
             ClientesPessoaFisica = listaPessoaFisica;
             ClientesPessoaJuridica = listaPessoaJuridica;
         }
@@ -41,13 +44,14 @@ namespace Banco.Models
 
             var cliente = new PessoaFisica()
             {
+                Movimentacoes = new List<Movimentacoes>(),
                 CPF = cpf,
                 Conta = conta,
                 Agencia = agencia,
                 Nome = nome,
                 Endereco = endereco,
                 Saldo = 0m,
-                Senha = senha
+                Senha = senha,
             };
 
             ClientesPessoaFisica.Add(cliente);
@@ -60,20 +64,31 @@ namespace Banco.Models
             return ClientesPessoaFisica.FirstOrDefault(x => x.Conta == conta && x.Agencia == agencia && x.Senha == senha);
         }
 
-        public void AtualizarSaldoCPF(int contaCliente, decimal valor)
+        public void AtualizarSaldoCPF(int contaCliente, decimal valor, string operacao)
         {
-            ClientesPessoaFisica.FirstOrDefault(x => x.Conta == contaCliente).Saldo = valor;
+            if (operacao.Contains("Deposito"))
+                ClientesPessoaFisica.FirstOrDefault(x => x.Conta == contaCliente).Saldo += valor;
+            else
+                ClientesPessoaFisica.FirstOrDefault(x => x.Conta == contaCliente).Saldo -= valor;
         }
 
         public void SacarCPF(Cliente cliente, decimal saque)
         {
             if (cliente.Saldo < saque)
             {
-                Viewer.Mensagem("Saldo insulficiente para saque");
+                Viewer.Mensagem("Saldo insulficiente para saque!");
+                Thread.Sleep(2000);
                 Menu.ShowSacar(cliente);
             }
 
-            AtualizarSaldoCPF(cliente.Conta, saque);
+            AtualizarSaldoCPF(cliente.Conta, saque, "Saque");
+            cliente.Movimentacoes.Add(new Movimentacoes()
+            {
+                Id = Guid.NewGuid().ToString()[..8],
+                DataTransacao = DateTime.Now,
+                ValorMovimentado = saque,
+                TipoMovimentacao = "Saque"
+            });
 
             Viewer.Mensagem("Saque realizado com sucesso!");
             Thread.Sleep(2000);
@@ -82,14 +97,28 @@ namespace Banco.Models
 
         public void DepositarCPF(Cliente cliente, decimal deposito)
         {
-            AtualizarSaldoCPF(cliente.Conta, deposito);
+            AtualizarSaldoCPF(cliente.Conta, deposito, "Deposito");
 
-            Viewer.Mensagem("Deposito realizado com sucesso!");
+            var movimentacao = new Movimentacoes()
+            {
+                Id = Guid.NewGuid().ToString()[..8],
+                DataTransacao = DateTime.Now,
+                ValorMovimentado = deposito,
+                TipoMovimentacao = "Deposito"
+            };
+
+            cliente.Movimentacoes.Add(movimentacao);
+            Viewer.Mensagem("Depósito realizado com sucesso!");
             Thread.Sleep(2000);
             Menu.WriteOptions(cliente);
         }
 
-        public static decimal ExtratoCPF(int conta)
+        public static List<Movimentacoes> ExtratoCPF(int conta)
+        {
+            return ClientesPessoaFisica.FirstOrDefault(x => x.Conta == conta).Movimentacoes;
+        }
+
+        public static decimal ObterSaldo(int conta)
         {
             return ClientesPessoaFisica.FirstOrDefault(x => x.Conta == conta).Saldo;
         }

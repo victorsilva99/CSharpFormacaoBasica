@@ -2,29 +2,19 @@ namespace Banco.Models
 {
     public class Movimentacoes
     {
-        public static string Id { get; set; } = Guid.NewGuid().ToString()[..8];
-
-        public static DateTime DataTransacao
-        {
-            get => DateTime.Now;
-        }
-
+        public string Id { get; set; }
+        public DateTime DataTransacao { get; set; }
         public decimal ValorMovimentado { get; set; }
+        public string TipoMovimentacao { get; set; }
 
-        public PessoaJuridica? ClienteCNPJ { get; set; }
-
-        public PessoaFisica? ClienteCPF { get; set; }
-
-        public Movimentacoes(PessoaFisica pessoaFisica, decimal valorMovimentado)
+        public Movimentacoes(string id, DateTime dataTransacao, decimal valorMovimentado, string tipoMovimentacao)
         {
-            ClienteCPF = pessoaFisica;
+            Id = id;
+            DataTransacao = dataTransacao;
             ValorMovimentado = valorMovimentado;
+            TipoMovimentacao = tipoMovimentacao;
         }
 
-        public Movimentacoes(PessoaJuridica pessoaJuridica, decimal valorMovimentado)
-        {
-            ClienteCNPJ = pessoaJuridica;
-            ValorMovimentado = valorMovimentado;
-        }
+        public Movimentacoes() { }
     }
 }
