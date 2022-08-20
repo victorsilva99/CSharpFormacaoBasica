@@ -5,6 +5,15 @@ namespace Banco.Presentation
 {
     public static class Menu
     {
+        public static void FinalizarPrograma()
+        {
+            Viewer.Show();
+            Viewer.Mensagem("Obrigado por utilizar nosso sistema! Até a próxima!");
+            Thread.Sleep(3000);
+            Console.Clear();
+            Environment.Exit(0);
+        }
+
         public static void Inicio()
         {
             Viewer.Show();
@@ -12,9 +21,17 @@ namespace Banco.Presentation
             Console.WriteLine($"Olá! Bem vindo!");
             Console.SetCursorPosition(3, 4);
             Console.WriteLine("Já é nosso cliente? (S/N)");
+            Console.SetCursorPosition(3, 13);
+            Console.WriteLine("Pressione ESC para voltar...");
             Console.SetCursorPosition(3, 5);
             Console.Write("-> ");
-            var resposta = Console.ReadKey().KeyChar;
+            var key = Console.ReadKey(true);
+            if (key.Key == ConsoleKey.Escape)
+            {
+                FinalizarPrograma();
+            }
+
+            var resposta = key.KeyChar;
             var respostaToUpper = Convert.ToString(resposta).ToUpper();
 
             switch (char.Parse(respostaToUpper))
@@ -36,16 +53,16 @@ namespace Banco.Presentation
             Console.SetCursorPosition(3, 4);
             Console.WriteLine("Informe sua agência e conta");
             Console.SetCursorPosition(3, 6);
-            Console.WriteLine("Agência: ");
-            var agencia = int.Parse(Input("agencia", 7));
+            Console.Write("Agência: ");
+            var agencia = int.Parse(Console.ReadLine());
+
+            Console.SetCursorPosition(3, 7);
+            Console.Write("Conta: ");
+            var conta = int.Parse(Console.ReadLine());
 
             Console.SetCursorPosition(3, 8);
-            Console.WriteLine("Conta: ");
-            var conta = int.Parse(Input("conta", 9));
-
-            Console.SetCursorPosition(3, 10);
-            Console.WriteLine("Senha: ");
-            var senha = int.Parse(Input("senha", 11));
+            Console.Write("Senha: ");
+            var senha = int.Parse(InputSenha(10));
 
             var login = Cliente.LoginCPF(agencia, conta, senha);
 
@@ -59,43 +76,57 @@ namespace Banco.Presentation
             }
         }
 
-        public static string Input(string dado, int indiceX)
+        public static string InputSenha(int indiceX)
         {
             var input = new StringBuilder();
-            var senha = dado.Contains("senha");
-            var indice = 3;
 
             while (true)
             {
-                Console.SetCursorPosition(indice, indiceX);
+                if (indiceX < 10)
+                    indiceX = 10;
+                if (indiceX > (input.Length + 10))
+                    indiceX = input.Length + 10;
+
+                Console.SetCursorPosition(indiceX, 8);
                 var key = Console.ReadKey(true);
 
                 if (key.Key == ConsoleKey.Enter)
                     break;
-
-                if (key.Key == ConsoleKey.Escape)
+                else if (key.Key == ConsoleKey.Escape)
                     Inicio();
-
-                if (key.Key == ConsoleKey.Backspace)
+                else if (key.Key == ConsoleKey.Backspace)
                 {
                     if (input.Length > 0)
                     {
                         input.Length--;
-                        Console.SetCursorPosition(indiceX - 1, 11);
+                        Console.SetCursorPosition(indiceX - 1, 8);
                         Console.Write(" ");
 
                         if (indiceX > 3)
                             indiceX--;
                     }
                 }
+                else if (key.Key == ConsoleKey.LeftArrow)
+                {
+                    if (input.Length > 0)
+                    {
+                        Console.SetCursorPosition(indiceX - 1, 8);
+                        indiceX--;
+                    }
+                }
+                else if (key.Key == ConsoleKey.RightArrow)
+                {
+                    if (input.Length > 0)
+                    {
+                        Console.SetCursorPosition(indiceX + 1, 8);
+                        indiceX++;
+                    }
+                }
                 else
                 {
                     input.Append(key.KeyChar);
-                    if (senha)
-                        Console.Write("*");
-                    else
-                        Console.Write(key.KeyChar.ToString());
-                    indice++;
+                    Console.Write("*");
+                    indiceX++;
                 }
             }
 
@@ -124,7 +155,8 @@ namespace Banco.Presentation
 
             if (cpfOk)
             {
-                Cliente.CadastrarPessoaFisica(nome, endereco, cpf);
+                var novoCliente = Cliente.CadastrarPessoaFisica(nome, endereco, cpf);
+                ExibirDados(novoCliente);
             }
             else
             {
@@ -133,6 +165,31 @@ namespace Banco.Presentation
                 NovoCliente();
             }
         }
+
+        public static void ExibirDados(Cliente cliente)
+        {
+            Viewer.Show();
+            Console.SetCursorPosition(3, 3);
+            Console.WriteLine("Seu cadastro foi realizado com sucesso!");
+            Console.SetCursorPosition(3, 4);
+            Console.WriteLine("Anote os dados da sua conta:");
+            Console.SetCursorPosition(3, 6);
+            Console.WriteLine($"Agência: {cliente.Agencia}");
+            Console.SetCursorPosition(3, 7);
+            Console.WriteLine($"Conta: {cliente.Conta}");
+            Console.SetCursorPosition(3, 8);
+            Console.WriteLine($"Senha: {cliente.ObterSenha(cliente.Conta)}");
+
+            Console.SetCursorPosition(3, 11);
+            Console.WriteLine("Precione ENTER para voltar ao menu");
+            var key = Console.ReadKey(true);
+
+            if (key.Key == ConsoleKey.Enter)
+            {
+                WriteOptions(cliente);
+            }
+        }
+
         public static bool ValidarCPF(string cpf)
         {
             int[] multiplicador1 = new int[9] { 10, 9, 8, 7, 6, 5, 4, 3, 2 };
@@ -185,7 +242,7 @@ namespace Banco.Presentation
         {
             Viewer.Show();
             Console.SetCursorPosition(3, 2);
-            Console.WriteLine($"Olá {cliente.Nome}! Bem vindo!");
+            Console.WriteLine($"Olá {cliente.Nome}! Bem vindo! Saldo atual: {string.Format("{0:C}", ShowSaldo(cliente.Conta))}");
 
             Console.SetCursorPosition(3, 4);
             Console.WriteLine("Qual operação deseja fazer?");
@@ -213,10 +270,10 @@ namespace Banco.Presentation
                 case 3: ShowExtrato(cliente); break;
                 case 0:
                     {
-                        Console.Clear();
+                        Viewer.Show();
                         Viewer.Mensagem("Obrigado por utilizar nossos serviços!!");
                         Thread.Sleep(3000);
-                        Environment.Exit(0);
+                        Inicio();
                         break;
                     }
                 default: WriteOptions(cliente); break;
@@ -264,7 +321,7 @@ namespace Banco.Presentation
             Viewer.Mensagem(message);
 
             var extrato = Cliente.ExtratoCPF(cliente.Conta);
-            var saldo = Cliente.ObterSaldo(cliente.Conta);
+            var saldo = ShowSaldo(cliente.Conta);
 
             Console.SetCursorPosition(3, 2);
             Console.WriteLine("--------------------- EXTRATO ---------------------");
@@ -272,7 +329,7 @@ namespace Banco.Presentation
             foreach (var movimentacao in extrato)
             {
                 Console.SetCursorPosition(3, indice);
-                Console.WriteLine($"{string.Format("{0:g}", movimentacao.DataTransacao)} - {movimentacao.TipoMovimentacao.PadRight(8)} - {string.Format("{0:C}", movimentacao.ValorMovimentado)}");
+                Console.WriteLine($"{string.Format("{0:g}", movimentacao.DataTransacao)} - {movimentacao.TipoMovimentacao,-8} - {string.Format("{0:C}", movimentacao.ValorMovimentado)}");
                 indice++;
             }
             Console.SetCursorPosition(3, indice++);
@@ -289,6 +346,11 @@ namespace Banco.Presentation
             {
                 WriteOptions(cliente);
             }
+        }
+
+        public static decimal ShowSaldo(int conta)
+        {
+            return Cliente.ObterSaldo(conta);
         }
     }
 }

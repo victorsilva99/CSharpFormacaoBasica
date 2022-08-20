@@ -39,7 +39,7 @@
 
         public static void Mensagem(string message)
         {
-            for (int lines = 2; lines < 12; lines++)
+            for (int lines = 2; lines < 29; lines++)
             {
                 Console.SetCursorPosition(3, lines);
                 Console.Write("");

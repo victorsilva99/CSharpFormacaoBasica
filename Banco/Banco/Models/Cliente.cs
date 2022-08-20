@@ -35,11 +35,16 @@ namespace Banco.Models
             ClientesPessoaJuridica = listaPessoaJuridica;
         }
 
-        public static void CadastrarPessoaFisica(string nome, string endereco, string cpf)
+        public int ObterSenha(int conta)
+        {
+            return ClientesPessoaFisica.FirstOrDefault(x => x.Conta == conta).Senha;
+        }
+
+        public static Cliente CadastrarPessoaFisica(string nome, string endereco, string cpf)
         {
             var rand = new Random();
-            var conta = rand.Next(1111, 9999);
-            var agencia = rand.Next(11111, 99999);
+            var conta = rand.Next(11111, 99999);
+            var agencia = rand.Next(1111, 9999);
             var senha = rand.Next(1111, 9999);
 
             var cliente = new PessoaFisica()
@@ -51,12 +56,12 @@ namespace Banco.Models
                 Nome = nome,
                 Endereco = endereco,
                 Saldo = 0m,
-                Senha = senha,
+                Senha = senha
             };
 
             ClientesPessoaFisica.Add(cliente);
 
-            Menu.WriteOptions(cliente);
+            return cliente;
         }
 
         public static Cliente LoginCPF(int agencia, int conta, int senha)
