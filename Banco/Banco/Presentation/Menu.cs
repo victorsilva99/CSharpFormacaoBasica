@@ -291,8 +291,10 @@ namespace Banco.Presentation
             var entradaValor = Console.ReadLine();
             decimal valor = 0;
 
+            entradaValor = entradaValor.Replace(",", ".").Replace("R", "").Replace("$", "");
+
             if (entradaValor != null)
-                valor = decimal.Parse(entradaValor);
+                valor = decimal.Parse(entradaValor.Trim());
 
             cliente.DepositarCPF(cliente, valor);
         }
@@ -309,8 +311,10 @@ namespace Banco.Presentation
             var entradaValor = Console.ReadLine();
             decimal valor = 0;
 
+            entradaValor = entradaValor.Replace(",", ".").Replace("R", "").Replace("$", "");
+
             if (entradaValor != null)
-                valor = decimal.Parse(entradaValor);
+                valor = decimal.Parse(entradaValor.Trim());
 
             cliente.SacarCPF(cliente, valor);
         }
